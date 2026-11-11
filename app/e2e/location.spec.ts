@@ -14,7 +14,7 @@ test('위치 버튼은 위치가 있는 카드에만 보인다', async ({ page }
   await expect(card(page, '주소만')).toContainText('서울 강남구 테헤란로 1')
 })
 
-test('위치 팝오버: 장소명/주소와 세 지도 앱 링크, 바깥 클릭/닫기로 닫힌다', async ({ page }) => {
+test('위치 팝오버: 장소명/주소와 지도 링크(주소로 검색), 바깥 클릭/닫기로 닫힌다', async ({ page, isMobile }) => {
   await createBoard(page)
   await addCard(page, '점심', '12:00', undefined, undefined, {
     name: '카페 모닝',
@@ -25,7 +25,7 @@ test('위치 팝오버: 장소명/주소와 세 지도 앱 링크, 바깥 클릭
   await expect(dialog.getByText('카페 모닝')).toBeVisible()
   await expect(dialog.getByText('서울 강남구 테헤란로 1')).toBeVisible()
 
-  const q = encodeURIComponent('카페 모닝 서울 강남구 테헤란로 1')
+  const q = encodeURIComponent('서울 강남구 테헤란로 1') // 주소로만 검색한다
   const kakao = dialog.getByRole('link', { name: /카카오맵/ })
   const naver = dialog.getByRole('link', { name: /네이버지도/ })
   const google = dialog.getByRole('link', { name: /구글지도/ })
@@ -36,6 +36,16 @@ test('위치 팝오버: 장소명/주소와 세 지도 앱 링크, 바깥 클릭
     await expect(link).toHaveAttribute('target', '_blank')
     await expect(link).toHaveAttribute('rel', /noopener/)
   }
+  // 티맵은 모바일에서만 보이고, 앱 실행 주소라 같은 창에서 연다
+  const tmap = dialog.getByRole('link', { name: /티맵/ })
+  if (isMobile) {
+    await expect(tmap).toHaveAttribute('href', `tmap://search?name=${q}`)
+    await expect(tmap).not.toHaveAttribute('target', /.+/)
+  } else {
+    await expect(tmap).toHaveCount(0)
+  }
+  await expect(dialog.getByRole('link', { name: /내비/ })).toHaveCount(0)
+  await expect(dialog.getByText('주소로 검색합니다.')).toBeVisible()
 
   await dialog.getByRole('button', { name: '닫기' }).click()
   await expect(dialog).toHaveCount(0)
@@ -70,10 +80,23 @@ test('카드 모달의 "지도에서 확인"은 입력하면 나타나고 입력
   const link = dialog.getByRole('link', { name: /지도에서 확인/ })
   await expect(link).toHaveAttribute('href', /map\.kakao\.com\/link\/search\/%EC%A0%9C%EC%A3%BC%EA%B3%B5%ED%95%AD$/)
   await dialog.getByLabel('주소 (선택)').fill('제주시 공항로 2')
-  await expect(link).toHaveAttribute('href', new RegExp(encodeURIComponent('제주공항 제주시 공항로 2') + '$'))
+  // 주소를 적으면 주소로만 검색한다
+  await expect(link).toHaveAttribute('href', new RegExp(encodeURIComponent('제주시 공항로 2') + '$'))
   await dialog.getByLabel('위치 (선택)').fill('')
   await dialog.getByLabel('주소 (선택)').fill('')
   await expect(link).toHaveCount(0)
+})
+
+test('주소가 없으면 장소명으로 검색한다고 안내한다', async ({ page }) => {
+  await createBoard(page)
+  await addCard(page, '점심', '12:00', undefined, undefined, { name: '제주공항' })
+  await page.getByRole('button', { name: '점심 위치 보기' }).click()
+  const dialog = page.getByRole('dialog', { name: '위치' })
+  await expect(dialog.getByText(/주소가 없어 장소명으로 검색/)).toBeVisible()
+  await expect(dialog.getByRole('link', { name: /카카오맵/ })).toHaveAttribute(
+    'href',
+    `https://map.kakao.com/link/search/${encodeURIComponent('제주공항')}`,
+  )
 })
 
 test('위치는 선택이라 비워도 저장되고, 수정으로 추가/삭제할 수 있다', async ({ page }) => {

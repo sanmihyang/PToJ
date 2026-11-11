@@ -17,13 +17,15 @@ export default function LocationModal({ card, onClose }: Props) {
         {card.address && <p className="mt-1 text-sm break-words text-slate-600">{card.address}</p>}
       </div>
       <p className="mb-2 text-sm font-medium">지도 앱에서 열기</p>
+      <p className="mb-2 text-xs text-slate-500">
+        {card.address ? '주소로 검색합니다.' : '주소가 없어 장소명으로 검색합니다. 주소를 적으면 더 정확해요.'}
+      </p>
       <ul className="flex flex-col gap-2">
         {links.map((link) => (
           <li key={link.id}>
             <a
               href={link.url}
-              target="_blank"
-              rel="noopener noreferrer"
+              {...(link.appScheme ? {} : { target: '_blank', rel: 'noopener noreferrer' })}
               className="flex min-h-12 items-center justify-between rounded-lg border border-slate-300 px-4 py-3 font-medium hover:bg-slate-50"
             >
               {link.label}

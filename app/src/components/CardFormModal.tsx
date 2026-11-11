@@ -147,7 +147,7 @@ export default function CardFormModal({ boardId, card, defaultDate, onSaved, onC
               onChange={set('address')}
               disabled={gone}
               className={inputClass}
-              placeholder="주소를 함께 적으면 더 정확하게 찾아요"
+              placeholder="지도는 주소로 검색해요 (예: 제주시 공항로 2)"
             />
           </Field>
           {searchQuery(values) !== '' && (
