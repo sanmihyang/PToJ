@@ -160,6 +160,8 @@ test('주간 보기에서도 날짜마다 연결선과 완료 체크가 동작�
   await expect(sat.locator('path[data-edge="vertical"]')).toHaveCount(1) // 토요일A → 토요일B
   await expect(sat.locator('path[data-edge-state="progress"]')).toHaveCount(0)
   await sat.getByRole('checkbox', { name: '토요일A 완료' }).click()
+  await expect(sat.locator('path[data-edge-state="progress"]')).toHaveCount(0) // 한 장만으로는 칠하지 않는다
+  await sat.getByRole('checkbox', { name: '토요일B 완료' }).click()
   await expect(sat.locator('path[data-edge-state="progress"]')).toHaveCount(1)
   // 다른 날의 로드맵에는 영향이 없다
   await expect(page.locator('section[data-day="2026-01-04"] path[data-edge]')).toHaveCount(0)

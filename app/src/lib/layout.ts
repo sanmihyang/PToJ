@@ -132,14 +132,12 @@ export interface StyledEdge extends Edge {
 }
 
 /**
- * 연결선 강조 규칙
- * - vertical: 완료한 카드(위)에서 나가는 연결만 강조 (다음 줄의 모든 카드로, 화살표)
- * - horizontal: 좌우 두 카드 중 하나라도 완료면 강조 (화살표 없음)
+ * 연결선 강조 규칙 (실제로 진행한 길만 칠한다)
+ * - 선의 양쪽 카드가 모두 완료일 때만 그 선을 강조한다. 한쪽만 완료면 아직 그쪽으로 가지 않은 것이므로
+ *   칠하지 않는다. 갈라지거나 합쳐지는 길에서는 완료한 쪽 선만 칠해지고 반대쪽은 그대로 둔다.
+ * - vertical(다음 줄로): 굵은 화살표 / horizontal(같은 시간축 좌우): 화살표 없는 선
  */
 export function styleEdges(edges: Edge[], cards: Card[]): StyledEdge[] {
   const done = new Set(cards.filter((c) => c.isCompleted).map((c) => c.id))
-  return edges.map((e) => ({
-    ...e,
-    highlighted: e.kind === 'vertical' ? done.has(e.from) : done.has(e.from) || done.has(e.to),
-  }))
+  return edges.map((e) => ({ ...e, highlighted: done.has(e.from) && done.has(e.to) }))
 }

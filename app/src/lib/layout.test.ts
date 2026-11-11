@@ -171,34 +171,73 @@ describe('styleEdges', () => {
     expect(hl(run([card('a', '09:00'), card('b', '10:00')]))).toEqual([])
   })
 
-  it('완료한 카드에서 나가는 연결만 강조되고, 들어오는 연결은 그대로', () => {
+  it('위 카드만 완료하면 아직 아래로 간 것이 아니므로 칠하지 않는다', () => {
+    const a = card('a', '09:00')
+    const b = card('b', '10:00')
+    expect(hl(run([done(a), b]))).toEqual([])
+  })
+
+  it('아래 카드만 완료해도(위가 미완료) 칠하지 않는다', () => {
+    const a = card('a', '09:00')
+    const b = card('b', '10:00')
+    expect(hl(run([a, done(b)]))).toEqual([])
+  })
+
+  it('위아래가 모두 완료이면 그 사이 선만 강조된다', () => {
     const a = card('a', '09:00')
     const b = card('b', '10:00')
     const c = card('c', '11:00')
-    expect(hl(run([done(a), b, c]))).toEqual(['vertical:a>b'])
-    expect(hl(run([a, done(b), c]))).toEqual(['vertical:b>c'])
-    expect(hl(run([a, b, done(c)]))).toEqual([]) // 마지막 카드는 나가는 연결이 없다
+    expect(hl(run([done(a), done(b), c]))).toEqual(['vertical:a>b'])
+    expect(hl(run([a, done(b), done(c)]))).toEqual(['vertical:b>c'])
   })
 
-  it('다음 줄에 카드가 여러 개면 모두 강조된다', () => {
+  it('이어서 모두 완료하면 지나온 길 전체가 강조된다', () => {
+    const [a, b, c] = [card('a', '09:00'), card('b', '10:00'), card('c', '11:00')]
+    expect(hl(run([done(a), done(b), done(c)]))).toEqual(['vertical:a>b', 'vertical:b>c'])
+  })
+
+  it('갈라지는 길에서는 완료한 쪽 선만 강조되고 반대쪽은 칠하지 않는다', () => {
     const a = card('a', '09:00', '10:00', 1)
     const b = card('b', '11:00', '12:00', 2)
     const c = card('c', '11:00', '12:00', 3)
-    expect(hl(run([done(a), b, c]))).toEqual(['vertical:a>b', 'vertical:a>c'])
+    expect(hl(run([done(a), done(b), c])).filter((x) => x.startsWith('vertical'))).toEqual(['vertical:a>b'])
+    expect(hl(run([done(a), b, done(c)])).filter((x) => x.startsWith('vertical'))).toEqual(['vertical:a>c'])
+    expect(hl(run([done(a), done(b), done(c)])).filter((x) => x.startsWith('vertical'))).toEqual([
+      'vertical:a>b',
+      'vertical:a>c',
+    ])
   })
 
-  it('같은 시간축(좌우) 연결은 한쪽만 완료해도 강조된다', () => {
+  it('합쳐지는 길에서는 완료한 쪽에서 오는 선만 강조된다', () => {
     const a = card('a', '09:00', '10:00', 1)
     const b = card('b', '09:00', '10:00', 2)
-    expect(hl(run([done(a), b]))).toEqual(['horizontal:a>b'])
-    expect(hl(run([a, done(b)]))).toEqual(['horizontal:a>b'])
+    const c = card('c', '12:00', null, 3)
+    // a, b가 같은 줄(좌우). c까지 간 길은 b를 거친 것
+    expect(hl(run([a, done(b), done(c)])).filter((x) => x.startsWith('vertical'))).toEqual(['vertical:b>c'])
+  })
+
+  it('같은 시간축(좌우) 연결도 양쪽이 모두 완료일 때만 강조된다', () => {
+    const a = card('a', '09:00', '10:00', 1)
+    const b = card('b', '09:00', '10:00', 2)
+    expect(hl(run([done(a), b]))).toEqual([]) // 아직 b 쪽으로 가지 않았다
+    expect(hl(run([a, done(b)]))).toEqual([])
+    expect(hl(run([done(a), done(b)]))).toEqual(['horizontal:a>b'])
     expect(hl(run([a, b]))).toEqual([])
   })
 
-  it('완료를 해제하면 기본 선으로 돌아간다', () => {
+  it('세 카드가 나란히 있으면 완료한 이웃끼리만 이어서 강조된다', () => {
+    const a = card('a', '09:00', '10:00', 1)
+    const b = card('b', '09:00', '10:00', 2)
+    const c = card('c', '09:00', '10:00', 3)
+    expect(hl(run([done(a), done(b), c]))).toEqual(['horizontal:a>b'])
+    expect(hl(run([done(a), b, done(c)]))).toEqual([])
+  })
+
+  it('완료를 해제하면 해당 선이 기본 선으로 돌아간다', () => {
     const a = card('a', '09:00')
     const b = card('b', '10:00')
-    expect(hl(run([done(a), b]))).toHaveLength(1)
+    expect(hl(run([done(a), done(b)]))).toHaveLength(1)
+    expect(hl(run([done(a), b]))).toHaveLength(0)
     expect(hl(run([a, b]))).toHaveLength(0)
   })
 })
