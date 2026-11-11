@@ -2,9 +2,10 @@ import { useState } from 'react'
 import { Link, Navigate, useParams, useSearchParams } from 'react-router-dom'
 import CardFormModal from '../components/CardFormModal'
 import FlowChart from '../components/FlowChart'
-import { isValidDate, type Card } from '../data'
+import { isValidDate, repository, type Card } from '../data'
 import { useAppData } from '../hooks/useAppData'
 import { addDays, formatDay, todayStr } from '../lib/date'
+import { errorMessage } from '../lib/errors'
 
 type Dialog = { type: 'create' } | { type: 'edit'; card: Card } | null
 
@@ -13,6 +14,7 @@ export default function BoardPage() {
   const { boards } = useAppData()
   const [params, setParams] = useSearchParams()
   const [dialog, setDialog] = useState<Dialog>(null)
+  const [actionError, setActionError] = useState<string | null>(null)
 
   const board = boards.find((b) => b.id === id)
   if (!board) {
@@ -25,6 +27,15 @@ export default function BoardPage() {
 
   const dayCards = board.cards.filter((c) => c.date === date)
   const openCreate = () => setDialog({ type: 'create' })
+
+  function toggleComplete(card: Card) {
+    try {
+      repository.updateCard(board!.id, card.id, { isCompleted: !card.isCompleted })
+      setActionError(null)
+    } catch (e) {
+      setActionError(errorMessage(e))
+    }
+  }
 
   return (
     <main className="mx-auto min-h-dvh max-w-3xl">
@@ -62,6 +73,12 @@ export default function BoardPage() {
         </div>
       </header>
 
+      {actionError && (
+        <p role="alert" className="mx-4 mt-3 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">
+          {actionError}
+        </p>
+      )}
+
       {board.cards.length === 0 ? (
         <div className="flex min-h-[60dvh] items-center justify-center">
           <button
@@ -78,7 +95,11 @@ export default function BoardPage() {
           {dayCards.length === 0 ? (
             <p className="mt-16 text-center text-slate-500">이 날짜에 일정이 없습니다</p>
           ) : (
-            <FlowChart cards={dayCards} onEdit={(card) => setDialog({ type: 'edit', card })} />
+            <FlowChart
+              cards={dayCards}
+              onEdit={(card) => setDialog({ type: 'edit', card })}
+              onToggleComplete={toggleComplete}
+            />
           )}
           <button
             type="button"

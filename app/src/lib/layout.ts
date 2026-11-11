@@ -125,3 +125,21 @@ export function buildEdges(rows: LayoutRow[]): Edge[] {
   }
   return edges
 }
+
+export interface StyledEdge extends Edge {
+  /** true: 실제 진행한 흐름으로 강조 (녹색). false: 기본 회색 선 */
+  highlighted: boolean
+}
+
+/**
+ * 연결선 강조 규칙
+ * - vertical: 완료한 카드(위)에서 나가는 연결만 강조 (다음 줄의 모든 카드로, 화살표)
+ * - horizontal: 좌우 두 카드 중 하나라도 완료면 강조 (화살표 없음)
+ */
+export function styleEdges(edges: Edge[], cards: Card[]): StyledEdge[] {
+  const done = new Set(cards.filter((c) => c.isCompleted).map((c) => c.id))
+  return edges.map((e) => ({
+    ...e,
+    highlighted: e.kind === 'vertical' ? done.has(e.from) : done.has(e.from) || done.has(e.to),
+  }))
+}

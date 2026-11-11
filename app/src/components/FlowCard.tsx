@@ -9,19 +9,24 @@ interface Props {
   /** 줄 안에서 아래로 내릴 간격(px) */
   offsetPx: number
   onEdit: () => void
+  onToggleComplete: () => void
 }
 
 const FlowCard = forwardRef<HTMLDivElement, Props>(function FlowCard(
-  { card, columns, offsetPx, onEdit },
+  { card, columns, offsetPx, onEdit, onToggleComplete },
   ref,
 ) {
   const width = columns > 1 ? 'w-40' : 'w-[min(15rem,calc(100vw-2rem))]'
+  const tone = card.isCompleted
+    ? 'border-emerald-500 bg-emerald-50'
+    : 'border-slate-300 bg-white'
   return (
     <div
       ref={ref}
       data-card-id={card.id}
+      data-completed={card.isCompleted}
       style={{ marginTop: offsetPx }}
-      className={`relative z-10 ${width} shrink-0 rounded-xl border-2 border-slate-300 bg-white p-3 shadow-sm`}
+      className={`relative z-10 ${width} shrink-0 rounded-xl border-2 p-3 shadow-sm transition-colors ${tone}`}
     >
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
@@ -40,6 +45,28 @@ const FlowCard = forwardRef<HTMLDivElement, Props>(function FlowCard(
       {card.content && (
         <p className="mt-1 line-clamp-2 break-words text-sm text-slate-600">{card.content}</p>
       )}
+      <button
+        type="button"
+        role="checkbox"
+        aria-checked={card.isCompleted}
+        aria-label={`${card.title} 완료`}
+        onClick={onToggleComplete}
+        className="-mx-1 mt-2 flex min-h-10 w-full items-center gap-2 rounded-lg px-1 text-sm text-slate-600 hover:bg-black/5"
+      >
+        <span
+          aria-hidden="true"
+          className={`flex h-6 w-6 items-center justify-center rounded-full border-2 text-sm font-bold ${
+            card.isCompleted
+              ? 'border-emerald-600 bg-emerald-600 text-white'
+              : 'border-slate-400 bg-white text-transparent'
+          }`}
+        >
+          ✓
+        </span>
+        <span className={card.isCompleted ? 'font-medium text-emerald-700' : ''}>
+          {card.isCompleted ? '완료' : '완료 체크'}
+        </span>
+      </button>
     </div>
   )
 })

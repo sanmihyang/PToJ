@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { Card } from '../data'
-import { buildEdges, layoutCards, overlaps } from './layout'
+import { buildEdges, layoutCards, overlaps, styleEdges } from './layout'
 
 let seq = 0
 function card(id: string, start: string, end: string | null = null, created?: number): Card {
@@ -160,5 +160,47 @@ describe('buildEdges', () => {
 
   it('카드가 하나면 연결이 없다', () => {
     expect(buildEdges(layoutCards([card('a', '09:00')]))).toEqual([])
+  })
+})
+
+describe('styleEdges', () => {
+  const done = (c: Card): Card => ({ ...c, isCompleted: true, completedAt: '2026-01-03T00:00:00.000Z' })
+  const run = (cards: Card[]) => styleEdges(buildEdges(layoutCards(cards)), cards)
+  const hl = (edges: ReturnType<typeof run>) =>
+    edges.filter((e) => e.highlighted).map((e) => `${e.kind}:${e.from}>${e.to}`).sort()
+
+  it('아무것도 완료하지 않으면 모두 기본 선', () => {
+    expect(hl(run([card('a', '09:00'), card('b', '10:00')]))).toEqual([])
+  })
+
+  it('완료한 카드에서 나가는 연결만 강조되고, 들어오는 연결은 그대로', () => {
+    const a = card('a', '09:00')
+    const b = card('b', '10:00')
+    const c = card('c', '11:00')
+    expect(hl(run([done(a), b, c]))).toEqual(['vertical:a>b'])
+    expect(hl(run([a, done(b), c]))).toEqual(['vertical:b>c'])
+    expect(hl(run([a, b, done(c)]))).toEqual([]) // 마지막 카드는 나가는 연결이 없다
+  })
+
+  it('다음 줄에 카드가 여러 개면 모두 강조된다', () => {
+    const a = card('a', '09:00', '10:00', 1)
+    const b = card('b', '11:00', '12:00', 2)
+    const c = card('c', '11:00', '12:00', 3)
+    expect(hl(run([done(a), b, c]))).toEqual(['vertical:a>b', 'vertical:a>c'])
+  })
+
+  it('같은 시간축(좌우) 연결은 한쪽만 완료해도 강조된다', () => {
+    const a = card('a', '09:00', '10:00', 1)
+    const b = card('b', '09:00', '10:00', 2)
+    expect(hl(run([done(a), b]))).toEqual(['horizontal:a>b'])
+    expect(hl(run([a, done(b)]))).toEqual(['horizontal:a>b'])
+    expect(hl(run([a, b]))).toEqual([])
+  })
+
+  it('완료를 해제하면 기본 선으로 돌아간다', () => {
+    const a = card('a', '09:00')
+    const b = card('b', '10:00')
+    expect(hl(run([done(a), b]))).toHaveLength(1)
+    expect(hl(run([a, b]))).toHaveLength(0)
   })
 })

@@ -1,29 +1,5 @@
-import { expect, test, type Page } from '@playwright/test'
-
-const DAY = '2026-01-03'
-
-async function createBoard(page: Page, name = '테스트') {
-  await page.goto('./')
-  await page.getByRole('button', { name: '새 보드 만들기' }).click()
-  await page.getByLabel('보드 이름').fill(name)
-  await page.getByRole('dialog').getByRole('button', { name: '만들기' }).click()
-  await expect(page).toHaveURL(/#\/board\/.+/)
-  await page.goto(`${page.url().split('?')[0]}?d=${DAY}`)
-  await expect(page.getByText('2026.01.03')).toBeVisible()
-}
-
-async function addCard(page: Page, title: string, start: string, end?: string, content?: string) {
-  await page.getByRole('button', { name: '일정 추가' }).click()
-  const dialog = page.getByRole('dialog')
-  await dialog.getByLabel('제목').fill(title)
-  await dialog.getByLabel('시작 시간').fill(start)
-  if (end) await dialog.getByLabel('종료 시간').fill(end)
-  if (content) await dialog.getByLabel('내용').fill(content)
-  await dialog.getByRole('button', { name: '저장' }).click()
-  await expect(dialog).toHaveCount(0)
-}
-
-const card = (page: Page, title: string) => page.locator('[data-card-id]', { hasText: title })
+import { expect, test } from '@playwright/test'
+import { addCard, card, createBoard } from './helpers'
 
 test('빈 보드에는 중앙 + 버튼만 보인다', async ({ page }) => {
   await createBoard(page)
