@@ -1,0 +1,22 @@
+1. 프로젝트 세팅
+
+목표: 빈 화면이라도 GitHub Pages 주소에서 열리는 상태를 만든다.
+
+구현 범위
+  - 저장소 루트의 app/ 대신 새 구조로 Vite + React + TS + Tailwind 프로젝트 생성 (위치: app/)
+  - HashRouter, vite base 설정 (base: "/PToJ/", 배포 주소 https://sanmihyang.github.io/PToJ/), 모바일 뷰포트/기본 레이아웃
+  - oxlint(Vite 템플릿 기본)/Prettier, Vitest 설정
+  - GitHub Actions 워크플로: main에 push 시 빌드 → Pages 배포 (sanmihyang/PToJ 저장소에서 동작. 현재 origin과 별개이므로 해당 저장소를 두 번째 remote로 추가해 push하는 방법을 안내)
+  - README: 실행/배포 방법
+
+참고 문서: 개요 3번, planning_ops/5 (0. 공통)
+
+자체 검증: npm run build 성공, 로컬 preview 확인, 테스트 러너 동작
+
+검수 체크리스트
+  - [ ] 로컬 실행 시 시작 화면이 뜬다
+  - [ ] GitHub Pages 주소에서 열리고, 새로고침해도 404가 나지 않는다
+  - [ ] 모바일 폭에서 화면이 깨지지 않는다
+
+완료 기준: 배포 주소에서 시작 화면 확인
+주의: Pages 설정(Settings > Pages > Source = GitHub Actions)은 사용자가 직접 켜야 한다. 안내를 제공한다.
