@@ -47,6 +47,43 @@ describe('보드', () => {
   })
 })
 
+describe('보드 복사', () => {
+  it('카드는 복사하고 완료 상태/참석 응답은 초기화한다', () => {
+    const { repo } = setup()
+    const b = repo.createBoard('여행')
+    const c = repo.addCard(b.id, cardInput({ attendanceEnabled: true }))
+    repo.updateCard(b.id, c.id, {
+      isCompleted: true,
+      attendees: [{ id: 'a1', name: '민수', status: 'yes' }],
+    })
+    const copy = repo.copyBoard(b.id)
+    expect(copy.id).not.toBe(b.id)
+    expect(copy.name).toBe('여행 복사')
+    expect(copy.cards).toHaveLength(1)
+    expect(copy.cards[0].id).not.toBe(c.id)
+    expect(copy.cards[0].title).toBe('점심 식사')
+    expect(copy.cards[0].isCompleted).toBe(false)
+    expect(copy.cards[0].completedAt).toBeNull()
+    expect(copy.cards[0].attendees).toEqual([])
+    // 원본은 그대로
+    expect(repo.getBoard(b.id)!.cards[0].isCompleted).toBe(true)
+    expect(repo.getBoard(b.id)!.cards[0].attendees).toHaveLength(1)
+  })
+
+  it('이름이 길면 30자 안으로 줄인다', () => {
+    const { repo } = setup()
+    const b = repo.createBoard('가'.repeat(30))
+    const copy = repo.copyBoard(b.id)
+    expect(copy.name.length).toBe(30)
+    expect(copy.name.endsWith(' 복사')).toBe(true)
+  })
+
+  it('없는 보드는 오류', () => {
+    const { repo } = setup()
+    expect(() => repo.copyBoard('x')).toThrowError(ValidationError)
+  })
+})
+
 describe('카드', () => {
   it('추가/수정/삭제', () => {
     const { repo } = setup()

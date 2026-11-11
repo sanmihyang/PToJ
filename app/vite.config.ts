@@ -6,5 +6,5 @@ import { defineConfig } from 'vitest/config'
 export default defineConfig({
   base: '/PToJ/',
   plugins: [react(), tailwindcss()],
-  test: { environment: 'node' },
+  test: { environment: 'node', include: ['src/**/*.test.ts'] },
 })

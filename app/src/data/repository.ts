@@ -1,4 +1,4 @@
-import { SCHEMA_VERSION, type AppData, type Attendee, type Board, type Card } from './types'
+import { LIMITS, SCHEMA_VERSION, type AppData, type Attendee, type Board, type Card } from './types'
 import type { DataStore, LoadResult } from './storage'
 import { validateAppData } from './validate'
 
@@ -28,6 +28,8 @@ export interface Repository {
   createBoard(name: string): Board
   renameBoard(id: string, name: string): Board
   deleteBoard(id: string): void
+  /** 카드를 복사한 새 보드를 만든다. 완료 상태는 초기화, 참석 응답은 복사하지 않는다. */
+  copyBoard(id: string): Board
   addCard(boardId: string, input: CardInput): Card
   updateCard(boardId: string, cardId: string, patch: CardPatch): Card
   deleteCard(boardId: string, cardId: string): void
@@ -107,6 +109,31 @@ export function createRepository(store: DataStore, options: RepositoryOptions = 
     deleteBoard(id) {
       boardOrThrow(id)
       commit({ ...data, boards: data.boards.filter((b) => b.id !== id) })
+    },
+
+    copyBoard(id) {
+      const source = boardOrThrow(id)
+      const ts = now().toISOString()
+      const suffix = ' 복사'
+      const name =
+        source.name.length + suffix.length > LIMITS.boardName
+          ? source.name.slice(0, LIMITS.boardName - suffix.length) + suffix
+          : source.name + suffix
+      const board: Board = {
+        id: newId(),
+        name,
+        createdAt: ts,
+        updatedAt: ts,
+        cards: source.cards.map((c) => ({
+          ...c,
+          id: newId(),
+          isCompleted: false,
+          completedAt: null,
+          attendees: [],
+        })),
+      }
+      commit({ ...data, boards: [...data.boards, board] })
+      return board
     },
 
     addCard(boardId, input) {
