@@ -32,11 +32,16 @@ test('위치 팝오버: 장소명/주소와 지도 링크(주소로 검색), 바
   await expect(kakao).toHaveAttribute('href', `https://map.kakao.com/link/search/${q}`)
   await expect(naver).toHaveAttribute('href', `https://map.naver.com/p/search/${q}`)
   await expect(google).toHaveAttribute('href', `https://www.google.com/maps/search/?api=1&query=${q}`)
+  // 모바일은 같은 탭(빈 탭이 남지 않게), 데스크톱은 새 탭
   for (const link of [kakao, naver, google]) {
-    await expect(link).toHaveAttribute('target', '_blank')
-    await expect(link).toHaveAttribute('rel', /noopener/)
+    if (isMobile) {
+      await expect(link).not.toHaveAttribute('target', /.+/)
+    } else {
+      await expect(link).toHaveAttribute('target', '_blank')
+      await expect(link).toHaveAttribute('rel', /noopener/)
+    }
   }
-  // 티맵은 모바일에서만 보이고, 앱 실행 주소라 같은 창에서 연다
+  // 티맵은 모바일에서만 보인다
   const tmap = dialog.getByRole('link', { name: /티맵/ })
   if (isMobile) {
     await expect(tmap).toHaveAttribute('href', `tmap://search?name=${q}`)
@@ -59,23 +64,37 @@ test('위치 팝오버: 장소명/주소와 지도 링크(주소로 검색), 바
   await expect(page.getByRole('dialog', { name: '위치' })).toHaveCount(0)
 })
 
-test('지도 링크를 누르면 새 탭으로 지도 검색이 열린다', async ({ page, context }) => {
+test('데스크톱은 새 탭, 모바일은 같은 탭에서 지도가 열린다 (빈 탭이 남지 않는다)', async ({ page, context, isMobile }) => {
   await createBoard(page)
   await addCard(page, '점심', '12:00', undefined, undefined, { name: '제주공항' })
   await page.getByRole('button', { name: '점심 위치 보기' }).click()
   // 외부 사이트에는 실제로 접속하지 않고 요청만 가로채 주소를 확인한다
   await context.route('https://map.kakao.com/**', (route) => route.fulfill({ body: 'ok' }))
-  const popup = context.waitForEvent('page')
-  await page.getByRole('dialog').getByRole('link', { name: /카카오맵/ }).click()
-  const opened = await popup
-  expect(opened.url()).toBe(`https://map.kakao.com/link/search/${encodeURIComponent('제주공항')}`)
+  const expected = `https://map.kakao.com/link/search/${encodeURIComponent('제주공항')}`
+  const link = page.getByRole('dialog').getByRole('link', { name: /카카오맵/ })
+  if (isMobile) {
+    await link.click()
+    await page.waitForURL(expected)
+    expect(context.pages()).toHaveLength(1) // 새 탭이 생기지 않는다
+  } else {
+    const popup = context.waitForEvent('page')
+    await link.click()
+    expect((await popup).url()).toBe(expected)
+    expect(context.pages()).toHaveLength(2)
+  }
 })
 
-test('카드 모달의 "지도에서 확인"은 입력하면 나타나고 입력한 위치로 연결된다', async ({ page }) => {
+test('카드 모달의 "지도에서 확인"은 데스크톱에서만 보이고 입력한 위치로 연결된다', async ({ page, isMobile }) => {
   await createBoard(page)
   await page.getByRole('button', { name: '일정 추가' }).click()
   const dialog = page.getByRole('dialog')
   await expect(dialog.getByRole('link', { name: /지도에서 확인/ })).toHaveCount(0)
+  if (isMobile) {
+    // 모바일은 입력 중인 내용을 잃지 않도록 이 링크를 숨긴다
+    await dialog.getByLabel('위치 (선택)').fill('제주공항')
+    await expect(dialog.getByRole('link', { name: /지도에서 확인/ })).toHaveCount(0)
+    return
+  }
   await dialog.getByLabel('위치 (선택)').fill('제주공항')
   const link = dialog.getByRole('link', { name: /지도에서 확인/ })
   await expect(link).toHaveAttribute('href', /map\.kakao\.com\/link\/search\/%EC%A0%9C%EC%A3%BC%EA%B3%B5%ED%95%AD$/)

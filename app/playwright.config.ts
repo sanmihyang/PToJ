@@ -7,6 +7,7 @@ export default defineConfig({
   use: { baseURL: 'http://localhost:5173/PToJ/' },
   projects: [
     { name: 'mobile', use: { ...devices['Pixel 7'] } },
+    { name: 'iphone', use: { ...devices['iPhone 13'] } },
     { name: 'desktop', use: { ...devices['Desktop Chrome'] } },
   ],
   webServer: {

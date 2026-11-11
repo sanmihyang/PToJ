@@ -9,3 +9,21 @@ body,
 body {
   @apply bg-slate-50 text-slate-900 antialiased;
 }
+
+/* iOS Safari의 날짜/시간 입력란은 자체 기본 너비가 있어 칸을 넘치기 쉽다 */
+input[type='date'],
+input[type='time'] {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  min-height: 2.75rem;
+  -webkit-appearance: none;
+  appearance: none;
+  text-align: left;
+  background-color: #fff;
+}
+
+input[type='date']::-webkit-date-and-time-value {
+  text-align: left;
+}

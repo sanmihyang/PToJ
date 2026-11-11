@@ -2,6 +2,7 @@ import { useState, type FormEvent } from 'react'
 import { LIMITS, NotFoundError, repository, type Card } from '../data'
 import { validateCardForm, type CardFormErrors, type CardFormValues } from '../lib/cardForm'
 import { errorMessage } from '../lib/errors'
+import { isMobileDevice } from '../lib/device'
 import { mapLinks, searchQuery } from '../lib/mapLinks'
 import ConfirmModal from './ConfirmModal'
 import Modal from './Modal'
@@ -20,7 +21,7 @@ const inputClass = 'w-full rounded-lg border border-slate-300 px-3 py-2 text-bas
 
 function Field({ label, error, children }: { label: string; error?: string; children: React.ReactNode }) {
   return (
-    <label className="flex flex-col gap-1 text-sm">
+    <label className="flex min-w-0 flex-col gap-1 text-sm">
       <span className="font-medium">{label}</span>
       {children}
       {error && (
@@ -117,7 +118,8 @@ export default function CardFormModal({ boardId, card, defaultDate, onSaved, onC
           <Field label="날짜" error={errors.date}>
             <input type="date" value={values.date} onChange={set('date')} disabled={gone} className={inputClass} />
           </Field>
-          <div className="grid grid-cols-2 gap-3">
+          {/* 모바일은 위아래로 쌓아 입력란이 겹치거나 넘치지 않게 한다 */}
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <Field label="시작 시간" error={errors.startTime}>
               <input type="time" value={values.startTime} onChange={set('startTime')} disabled={gone} className={inputClass} />
             </Field>
@@ -150,7 +152,8 @@ export default function CardFormModal({ boardId, card, defaultDate, onSaved, onC
               placeholder="지도는 주소로 검색해요 (예: 제주시 공항로 2)"
             />
           </Field>
-          {searchQuery(values) !== '' && (
+          {/* 모바일에서는 링크가 앱을 열고 이 화면을 떠나 입력 중인 내용을 잃을 수 있어 숨긴다 */}
+          {!isMobileDevice() && searchQuery(values) !== '' && (
             <a
               href={mapLinks(values)[0].url}
               target="_blank"
