@@ -6,18 +6,9 @@ export const LIMITS = {
   boardName: 30,
   cardTitle: 50,
   cardContent: 500,
-  attendeeName: 20,
   placeName: 200,
   address: 300,
 } as const
-
-export type AttendeeStatus = 'yes' | 'no' | 'maybe'
-
-export interface Attendee {
-  id: string
-  name: string
-  status: AttendeeStatus
-}
 
 export interface Card {
   id: string
@@ -33,9 +24,6 @@ export interface Card {
   address: string | null
   isCompleted: boolean
   completedAt: string | null
-  attendanceEnabled: boolean
-  /** attendanceEnabled가 false여도 보관한다 */
-  attendees: Attendee[]
   createdAt: string
   updatedAt: string
 }

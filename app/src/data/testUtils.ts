@@ -36,7 +36,6 @@ export function cardInput(overrides: Partial<CardInput> = {}): CardInput {
     endTime: null,
     placeName: null,
     address: null,
-    attendanceEnabled: false,
     ...overrides,
   }
 }

@@ -1,4 +1,4 @@
-import { LIMITS, SCHEMA_VERSION, type AppData, type Attendee, type Board, type Card } from './types'
+import { LIMITS, SCHEMA_VERSION, type AppData, type Board, type Card } from './types'
 import type { DataStore, LoadResult } from './storage'
 import { validateAppData } from './validate'
 
@@ -15,12 +15,10 @@ export interface CardInput {
   endTime: string | null
   placeName: string | null
   address: string | null
-  attendanceEnabled: boolean
 }
 
 export interface CardPatch extends Partial<CardInput> {
   isCompleted?: boolean
-  attendees?: Attendee[]
 }
 
 export interface Repository {
@@ -31,7 +29,7 @@ export interface Repository {
   createBoard(name: string): Board
   renameBoard(id: string, name: string): Board
   deleteBoard(id: string): void
-  /** 카드를 복사한 새 보드를 만든다. 완료 상태는 초기화, 참석 응답은 복사하지 않는다. */
+  /** 카드를 복사한 새 보드를 만든다. 완료 상태는 초기화한다. */
   copyBoard(id: string): Board
   addCard(boardId: string, input: CardInput): Card
   updateCard(boardId: string, cardId: string, patch: CardPatch): Card
@@ -132,7 +130,6 @@ export function createRepository(store: DataStore, options: RepositoryOptions = 
           id: newId(),
           isCompleted: false,
           completedAt: null,
-          attendees: [],
         })),
       }
       commit({ ...data, boards: [...data.boards, board] })
@@ -146,7 +143,6 @@ export function createRepository(store: DataStore, options: RepositoryOptions = 
         id: newId(),
         isCompleted: false,
         completedAt: null,
-        attendees: [],
         createdAt: ts,
         updatedAt: ts,
       }

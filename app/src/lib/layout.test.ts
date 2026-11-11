@@ -16,8 +16,6 @@ function card(id: string, start: string, end: string | null = null, created?: nu
     address: null,
     isCompleted: false,
     completedAt: null,
-    attendanceEnabled: false,
-    attendees: [],
     createdAt: new Date(Date.UTC(2026, 0, 1, 0, n)).toISOString(),
     updatedAt: '2026-01-01T00:00:00.000Z',
   }

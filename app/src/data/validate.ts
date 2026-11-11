@@ -1,8 +1,6 @@
 import {
   LIMITS,
   type AppData,
-  type Attendee,
-  type AttendeeStatus,
   type Board,
   type Card,
 } from './types'
@@ -94,19 +92,6 @@ function uniqueIds(items: { id: string }[], path: string) {
   }
 }
 
-function parseAttendee(value: unknown, path: string): Attendee {
-  const o = obj(value, path)
-  const status = o.status
-  if (status !== 'yes' && status !== 'no' && status !== 'maybe') {
-    fail(`${path}.status`, "'yes' | 'no' | 'maybe' 중 하나여야 합니다")
-  }
-  return {
-    id: str(o, 'id', path, 100, true),
-    name: str(o, 'name', path, LIMITS.attendeeName, true),
-    status: status as AttendeeStatus,
-  }
-}
-
 function parseCard(value: unknown, path: string): Card {
   const o = obj(value, path)
   const startTime = timeField(o, 'startTime', path)
@@ -125,10 +110,6 @@ function parseCard(value: unknown, path: string): Card {
   } else if (completedAtRaw !== null && completedAtRaw !== undefined) {
     fail(`${path}.completedAt`, '완료하지 않은 카드는 null이어야 합니다')
   }
-  const attendees = array(o, 'attendees', path).map((a, i) =>
-    parseAttendee(a, `${path}.attendees[${i}]`),
-  )
-  uniqueIds(attendees, `${path}.attendees`)
   return {
     id: str(o, 'id', path, 100, true),
     title: str(o, 'title', path, LIMITS.cardTitle, true),
@@ -140,8 +121,6 @@ function parseCard(value: unknown, path: string): Card {
     address: nullableStr(o, 'address', path, LIMITS.address),
     isCompleted,
     completedAt,
-    attendanceEnabled: bool(o, 'attendanceEnabled', path),
-    attendees,
     createdAt: dateTimeField(o, 'createdAt', path),
     updatedAt: dateTimeField(o, 'updatedAt', path),
   }

@@ -16,8 +16,6 @@ function card(o: Partial<Card> = {}): Card {
     address: null,
     isCompleted: false,
     completedAt: null,
-    attendanceEnabled: false,
-    attendees: [],
     createdAt: ts,
     updatedAt: ts,
     ...o,
@@ -100,13 +98,18 @@ describe('validateAppData', () => {
     expect(ok(data([board({ cards: [card({ isCompleted: false, completedAt: ts })] })])).ok).toBe(false)
   })
 
-  it('참석자 상태/이름 검증', () => {
-    const good = { id: 'a1', name: '민수', status: 'yes' as const }
-    expect(ok(data([board({ cards: [card({ attendees: [good] })] })])).ok).toBe(true)
-    const badStatus = { ...good, status: 'x' } as never
-    expect(ok(data([board({ cards: [card({ attendees: [badStatus] })] })])).ok).toBe(false)
-    const longName = { ...good, name: 'a'.repeat(21) }
-    expect(ok(data([board({ cards: [card({ attendees: [longName] })] })])).ok).toBe(false)
+  it('참석 기능 제거 전에 저장된 데이터(참석 필드 포함)도 읽고, 해당 필드는 버린다', () => {
+    const legacy = data()
+    Object.assign(legacy.boards[0].cards[0], {
+      attendanceEnabled: true,
+      attendees: [{ id: 'a1', name: '민수', status: 'yes' }],
+    })
+    const r = ok(legacy)
+    expect(r.ok).toBe(true)
+    if (r.ok) {
+      expect('attendees' in r.value.boards[0].cards[0]).toBe(false)
+      expect('attendanceEnabled' in r.value.boards[0].cards[0]).toBe(false)
+    }
   })
 
   it('id 중복을 거부한다', () => {

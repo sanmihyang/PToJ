@@ -1,6 +1,5 @@
 import { useState } from 'react'
 import { Link, Navigate, useParams, useSearchParams } from 'react-router-dom'
-import AttendanceModal from '../components/AttendanceModal'
 import CardFormModal from '../components/CardFormModal'
 import FlowChart from '../components/FlowChart'
 import LocationModal from '../components/LocationModal'
@@ -13,7 +12,6 @@ type Dialog =
   | { type: 'create' }
   | { type: 'edit'; card: Card }
   | { type: 'location'; cardId: string }
-  | { type: 'attendance'; cardId: string }
   | null
 
 export default function BoardPage() {
@@ -35,8 +33,6 @@ export default function BoardPage() {
   const dayCards = board.cards.filter((c) => c.date === date)
   const locationCard =
     dialog?.type === 'location' ? board.cards.find((c) => c.id === dialog.cardId) : undefined
-  const attendanceCard =
-    dialog?.type === 'attendance' ? board.cards.find((c) => c.id === dialog.cardId) : undefined
   const openCreate = () => setDialog({ type: 'create' })
 
   function toggleComplete(card: Card) {
@@ -110,7 +106,6 @@ export default function BoardPage() {
               cards={dayCards}
               onEdit={(card) => setDialog({ type: 'edit', card })}
               onOpenLocation={(card) => setDialog({ type: 'location', cardId: card.id })}
-              onOpenAttendance={(card) => setDialog({ type: 'attendance', cardId: card.id })}
               onToggleComplete={toggleComplete}
             />
           )}
@@ -127,9 +122,6 @@ export default function BoardPage() {
 
       {dialog?.type === 'location' && locationCard && (
         <LocationModal card={locationCard} onClose={() => setDialog(null)} />
-      )}
-      {dialog?.type === 'attendance' && attendanceCard && (
-        <AttendanceModal boardId={board.id} card={attendanceCard} onClose={() => setDialog(null)} />
       )}
       {(dialog?.type === 'create' || dialog?.type === 'edit') && (
         <CardFormModal

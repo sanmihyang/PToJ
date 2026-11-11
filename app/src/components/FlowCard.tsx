@@ -1,7 +1,6 @@
 import { forwardRef } from 'react'
 import type { Card } from '../data'
 import { timeLabel } from '../lib/format'
-import { summaryLabel } from '../lib/attendance'
 import { hasPlace } from '../lib/mapLinks'
 
 interface Props {
@@ -12,12 +11,11 @@ interface Props {
   offsetPx: number
   onEdit: () => void
   onOpenLocation: () => void
-  onOpenAttendance: () => void
   onToggleComplete: () => void
 }
 
 const FlowCard = forwardRef<HTMLDivElement, Props>(function FlowCard(
-  { card, columns, offsetPx, onEdit, onOpenLocation, onOpenAttendance, onToggleComplete },
+  { card, columns, offsetPx, onEdit, onOpenLocation, onToggleComplete },
   ref,
 ) {
   const width = columns > 1 ? 'w-40' : 'w-[min(15rem,calc(100vw-2rem))]'
@@ -58,17 +56,6 @@ const FlowCard = forwardRef<HTMLDivElement, Props>(function FlowCard(
         >
           <span aria-hidden="true">📍</span>
           <span className="min-w-0 truncate">{card.placeName ?? card.address}</span>
-        </button>
-      )}
-      {card.attendanceEnabled && (
-        <button
-          type="button"
-          onClick={onOpenAttendance}
-          aria-label={`${card.title} 참석자 관리`}
-          className="-mx-1 mt-1 flex min-h-9 w-full items-center gap-1 rounded-lg px-1 text-left text-sm text-violet-700 hover:bg-black/5"
-        >
-          <span aria-hidden="true">👥</span>
-          <span className="min-w-0 truncate">{summaryLabel(card.attendees)}</span>
         </button>
       )}
       <button

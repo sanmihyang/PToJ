@@ -1,4 +1,4 @@
-9. 내보내기와 공유
+8. 내보내기와 공유
 
 목표: 이미지, 공유 링크, JSON 파일, 전체 백업/복원.
 
@@ -10,7 +10,7 @@
   - JSON 공유: 보드 단위 내보내기(파일 저장 + Web Share API로 공유 시트), 받는 쪽 가져오기(파일 선택 → 확인 화면 → 새 보드 추가). 전체 백업/복원(대체/합치기, 확인창)
   - 보드 목록에 가져오기·백업/복원 버튼, 마지막 백업 시각 기록, 백업 권장 배너
 
-참고 문서: planning_ops/2(2.3, 2.4), 5(5,6), 6(6,7), 7, doc/data/schema.json (share_payload, backup_payload)
+참고 문서: planning_ops/2(2.3, 2.4), 5(5,6), 6(5,6), 7, doc/data/schema.json (share_payload, backup_payload)
 
 자체 검증: 직렬화↔역직렬화 왕복 테스트, 잘못된 입력(깨진 링크, 다른 버전, 과대 입력) 거부 테스트, Playwright 링크 가져오기
 
