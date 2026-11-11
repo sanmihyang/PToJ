@@ -43,6 +43,7 @@ export default function CardFormModal({ boardId, card, defaultDate, onSaved, onC
     placeName: card?.placeName ?? '',
     address: card?.address ?? '',
   })
+  const [attendanceEnabled, setAttendanceEnabled] = useState(card?.attendanceEnabled ?? false)
   const [errors, setErrors] = useState<CardFormErrors>({})
   const [saveError, setSaveError] = useState<string | null>(null)
   const [gone, setGone] = useState(false)
@@ -74,12 +75,13 @@ export default function CardFormModal({ boardId, card, defaultDate, onSaved, onC
       endTime: values.endTime === '' ? null : values.endTime,
       placeName: values.placeName.trim() === '' ? null : values.placeName.trim(),
       address: values.address.trim() === '' ? null : values.address.trim(),
+      attendanceEnabled,
     }
     try {
       if (card) {
         repository.updateCard(boardId, card.id, fields)
       } else {
-        repository.addCard(boardId, { ...fields, attendanceEnabled: false })
+        repository.addCard(boardId, fields)
       }
       onSaved(values.date)
       onClose()
@@ -173,6 +175,19 @@ export default function CardFormModal({ boardId, card, defaultDate, onSaved, onC
               className={inputClass}
             />
           </Field>
+          <label className="flex min-h-11 items-center gap-3 text-sm">
+            <input
+              type="checkbox"
+              checked={attendanceEnabled}
+              disabled={gone}
+              onChange={(e) => setAttendanceEnabled(e.target.checked)}
+              className="h-5 w-5 accent-emerald-600"
+            />
+            <span>
+              <span className="font-medium">참석 여부 받기</span>
+              <span className="block text-slate-500">끄면 참석자 기록은 보관되고 화면에서만 숨겨져요</span>
+            </span>
+          </label>
           {saveError && (
             <p role="alert" className="text-sm text-red-600">
               {saveError}

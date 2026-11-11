@@ -20,10 +20,11 @@ interface Props {
   cards: Card[]
   onEdit: (card: Card) => void
   onOpenLocation: (card: Card) => void
+  onOpenAttendance: (card: Card) => void
   onToggleComplete: (card: Card) => void
 }
 
-export default function FlowChart({ cards, onEdit, onOpenLocation, onToggleComplete }: Props) {
+export default function FlowChart({ cards, onEdit, onOpenLocation, onOpenAttendance, onToggleComplete }: Props) {
   const rows = useMemo(() => layoutCards(cards), [cards])
   const edges = useMemo(() => styleEdges(buildEdges(rows), cards), [rows, cards])
 
@@ -165,6 +166,7 @@ export default function FlowChart({ cards, onEdit, onOpenLocation, onToggleCompl
                       offsetPx={idx === 0 ? Math.round(p.offset * MAX_OFFSET_PX) : 0}
                       onEdit={() => onEdit(p.card)}
                       onOpenLocation={() => onOpenLocation(p.card)}
+                      onOpenAttendance={() => onOpenAttendance(p.card)}
                       onToggleComplete={() => onToggleComplete(p.card)}
                     />
                   ))}
