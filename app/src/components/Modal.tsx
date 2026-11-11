@@ -21,7 +21,7 @@ export default function Modal({ title, onClose, children }: Props) {
         role="dialog"
         aria-modal="true"
         aria-label={title}
-        className="relative w-full max-w-md rounded-t-2xl bg-white p-5 shadow-xl md:rounded-2xl"
+        className="relative max-h-[90dvh] w-full max-w-md overflow-y-auto rounded-t-2xl bg-white p-5 shadow-xl md:rounded-2xl"
       >
         <h2 className="mb-4 text-lg font-bold">{title}</h2>
         {children}

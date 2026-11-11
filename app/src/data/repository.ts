@@ -4,6 +4,9 @@ import { validateAppData } from './validate'
 
 export class ValidationError extends Error {}
 
+/** 보드/카드가 없거나 이미 삭제된 경우 */
+export class NotFoundError extends ValidationError {}
+
 export interface CardInput {
   title: string
   content: string
@@ -65,7 +68,7 @@ export function createRepository(store: DataStore, options: RepositoryOptions = 
 
   function boardOrThrow(id: string): Board {
     const board = data.boards.find((b) => b.id === id)
-    if (!board) throw new ValidationError('존재하지 않는 보드입니다')
+    if (!board) throw new NotFoundError('존재하지 않는 보드입니다')
     return board
   }
 
@@ -154,7 +157,7 @@ export function createRepository(store: DataStore, options: RepositoryOptions = 
     updateCard(boardId, cardId, patch) {
       const board = boardOrThrow(boardId)
       if (!board.cards.some((c) => c.id === cardId)) {
-        throw new ValidationError('존재하지 않거나 이미 삭제된 카드입니다')
+        throw new NotFoundError('이미 삭제된 일정입니다')
       }
       let updated!: Card
       withBoard(boardId, (b, ts) => ({
@@ -177,7 +180,7 @@ export function createRepository(store: DataStore, options: RepositoryOptions = 
     deleteCard(boardId, cardId) {
       const board = boardOrThrow(boardId)
       if (!board.cards.some((c) => c.id === cardId)) {
-        throw new ValidationError('존재하지 않거나 이미 삭제된 카드입니다')
+        throw new NotFoundError('이미 삭제된 일정입니다')
       }
       withBoard(boardId, (b) => ({ ...b, cards: b.cards.filter((c) => c.id !== cardId) }))
     },

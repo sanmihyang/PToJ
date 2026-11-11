@@ -3,7 +3,7 @@ import { LocalStorageStore, MemoryStore, StorageError, type DataStore } from './
 
 export * from './types'
 export { StorageError, requestPersistence, DATA_KEY, CORRUPT_KEY } from './storage'
-export { ValidationError, type CardInput, type CardPatch, type Repository } from './repository'
+export { ValidationError, NotFoundError, type CardInput, type CardPatch, type Repository } from './repository'
 export { validateAppData, validateBoard, isValidDate, isValidTime } from './validate'
 
 function createStore(): { store: DataStore; persistent: boolean; local: LocalStorageStore | null } {
