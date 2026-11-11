@@ -45,6 +45,16 @@ export default function FlowChart({ cards, onEdit, onToggleComplete }: Props) {
         bottom: r.bottom - base.top,
       }
     }
+    // 줄 사이에서 모든 연결선이 같은 높이에서 꺾이도록 줄 사이 중간 높이를 구한다
+    const rowOf = new Map<string, number>()
+    rows.forEach((row, i) => row.cards.forEach((p) => rowOf.set(p.card.id, i)))
+    const gapY: number[] = []
+    for (let r = 0; r < rows.length - 1; r++) {
+      const bottoms = rows[r].cards.map((p) => rect(p.card.id)?.bottom ?? 0)
+      const tops = rows[r + 1].cards.map((p) => rect(p.card.id)?.top ?? 0)
+      gapY[r] = (Math.max(...bottoms) + Math.min(...tops)) / 2
+    }
+
     const next: Line[] = []
     for (const edge of edges) {
       const a = rect(edge.from)
@@ -52,17 +62,18 @@ export default function FlowChart({ cards, onEdit, onToggleComplete }: Props) {
       if (!a || !b) continue
       let d: string
       if (edge.kind === 'vertical') {
-        const x1 = (a.left + a.right) / 2
-        const x2 = (b.left + b.right) / 2
-        const y1 = a.bottom
-        const y2 = b.top - 1
-        const ym = (y1 + y2) / 2
-        d = `M ${x1} ${y1} C ${x1} ${ym}, ${x2} ${ym}, ${x2} ${y2}`
+        // 아래로 → 옆으로 → 아래로 (직각 꺾은선). 위치가 같으면 곧은 직선
+        const x1 = Math.round((a.left + a.right) / 2)
+        const x2 = Math.round((b.left + b.right) / 2)
+        const ym = Math.round(gapY[rowOf.get(edge.from) ?? 0])
+        const y2 = Math.round(b.top) - 1
+        d = `M ${x1} ${Math.round(a.bottom)} L ${x1} ${ym} L ${x2} ${ym} L ${x2} ${y2}`
       } else {
-        const y1 = (a.top + a.bottom) / 2
-        const y2 = (b.top + b.bottom) / 2
-        const xm = (a.right + b.left) / 2
-        d = `M ${a.right} ${y1} C ${xm} ${y1}, ${xm} ${y2}, ${b.left} ${y2}`
+        // 옆으로 → 위/아래로 → 옆으로
+        const y1 = Math.round((a.top + a.bottom) / 2)
+        const y2 = Math.round((b.top + b.bottom) / 2)
+        const xm = Math.round((a.right + b.left) / 2)
+        d = `M ${Math.round(a.right)} ${y1} L ${xm} ${y1} L ${xm} ${y2} L ${Math.round(b.left)} ${y2}`
       }
       next.push({
         key: `${edge.kind}:${edge.from}:${edge.to}`,
@@ -78,7 +89,7 @@ export default function FlowChart({ cards, onEdit, onToggleComplete }: Props) {
         ? prev
         : next,
     )
-  }, [edges])
+  }, [edges, rows])
 
   useLayoutEffect(() => {
     measure()
@@ -124,6 +135,7 @@ export default function FlowChart({ cards, onEdit, onToggleComplete }: Props) {
                   data-edge={line.kind}
                   data-edge-state={line.highlighted ? 'progress' : 'plain'}
                   fill="none"
+                  strokeLinejoin="miter"
                   stroke={line.highlighted ? PROGRESS_COLOR : PLAIN_COLOR}
                   strokeWidth={arrow ? 4 : line.highlighted ? 3 : 2}
                   markerEnd={arrow ? 'url(#progress-arrow)' : undefined}
