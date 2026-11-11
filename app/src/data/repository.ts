@@ -34,6 +34,8 @@ export interface Repository {
   addCard(boardId: string, input: CardInput): Card
   updateCard(boardId: string, cardId: string, patch: CardPatch): Card
   deleteCard(boardId: string, cardId: string): void
+  /** 보드들을 새 보드로 추가한다 (보드/카드 ID를 새로 발급, 기존 보드는 그대로). 추가된 보드를 돌려준다. */
+  importBoards(boards: Board[]): Board[]
   /** 전체 데이터를 교체한다 (복원/가져오기용). 검증에 실패하면 ValidationError. */
   replaceAll(data: unknown): void
   /** 변경(이 탭 또는 다른 탭)이 있을 때 호출된다. 해제 함수를 돌려준다. */
@@ -179,6 +181,19 @@ export function createRepository(store: DataStore, options: RepositoryOptions = 
         throw new NotFoundError('이미 삭제된 일정입니다')
       }
       withBoard(boardId, (b) => ({ ...b, cards: b.cards.filter((c) => c.id !== cardId) }))
+    },
+
+    importBoards(boards) {
+      const ts = now().toISOString()
+      const added: Board[] = boards.map((b) => ({
+        ...b,
+        id: newId(),
+        createdAt: ts,
+        updatedAt: ts,
+        cards: b.cards.map((c) => ({ ...c, id: newId() })),
+      }))
+      commit({ ...data, boards: [...data.boards, ...added] })
+      return added
     },
 
     replaceAll(value) {

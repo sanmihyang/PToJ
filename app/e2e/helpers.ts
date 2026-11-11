@@ -33,3 +33,64 @@ export async function addCard(
 }
 
 export const card = (page: Page, title: string) => page.locator('[data-card-id]', { hasText: title })
+
+const SEED_TS = '2026-01-01T09:00:00.000Z'
+
+export interface SeedCard {
+  id: string
+  title: string
+  content?: string
+  date: string
+  startTime: string
+  endTime?: string | null
+  placeName?: string | null
+  address?: string | null
+  isCompleted?: boolean
+  created?: number
+}
+
+export function seedCard(c: SeedCard) {
+  return {
+    id: c.id,
+    title: c.title,
+    content: c.content ?? '',
+    date: c.date,
+    startTime: c.startTime,
+    endTime: c.endTime ?? null,
+    placeName: c.placeName ?? null,
+    address: c.address ?? null,
+    isCompleted: c.isCompleted ?? false,
+    completedAt: c.isCompleted ? SEED_TS : null,
+    createdAt: new Date(Date.parse(SEED_TS) + (c.created ?? 0) * 1000).toISOString(),
+    updatedAt: SEED_TS,
+  }
+}
+
+export interface SeedBoard {
+  id: string
+  name: string
+  cards: ReturnType<typeof seedCard>[]
+  createdAt?: string
+  updatedAt?: string
+}
+
+/** 페이지가 열리기 전에 localStorage에 데이터를 넣어 둔다 (이미 데이터가 있으면 건드리지 않는다) */
+export async function seedBoards(page: Page, boards: SeedBoard[], meta?: Record<string, string>) {
+  const data = {
+    version: 1,
+    boards: boards.map((b) => ({
+      id: b.id,
+      name: b.name,
+      createdAt: b.createdAt ?? SEED_TS,
+      updatedAt: b.updatedAt ?? SEED_TS,
+      cards: b.cards,
+    })),
+  }
+  await page.addInitScript(
+    ([d, m]) => {
+      if (!localStorage.getItem('ptoj:data')) localStorage.setItem('ptoj:data', JSON.stringify(d))
+      if (m && !localStorage.getItem('ptoj:meta')) localStorage.setItem('ptoj:meta', JSON.stringify(m))
+    },
+    [data, meta ?? null] as const,
+  )
+}

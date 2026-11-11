@@ -1,17 +1,21 @@
 import { useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
+import BackupNotice from '../components/BackupNotice'
 import BoardFormModal from '../components/BoardFormModal'
 import ConfirmModal from '../components/ConfirmModal'
+import ImportModal from '../components/ImportModal'
 import MoreMenu from '../components/MoreMenu'
 import { repository, type Board } from '../data'
 import { useAppData } from '../hooks/useAppData'
 import { errorMessage } from '../lib/errors'
+import { saveBackup, saveBoardFile } from '../lib/backup'
 import { formatDate } from '../lib/format'
 
 type Dialog =
   | { type: 'create' }
   | { type: 'rename'; board: Board }
   | { type: 'delete'; board: Board }
+  | { type: 'import' }
   | null
 
 export default function BoardListPage() {
@@ -40,17 +44,29 @@ export default function BoardListPage() {
     <main className="mx-auto min-h-dvh max-w-2xl px-4 pb-24 pt-6">
       <header className="mb-6 flex items-center justify-between">
         <h1 className="text-xl font-bold">내 보드</h1>
-        {boards.length > 0 && (
-          <button
-            type="button"
-            onClick={() => setDialog({ type: 'create' })}
-            className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white"
-          >
-            새 보드
-          </button>
-        )}
+        <div className="flex items-center gap-1">
+          {boards.length > 0 && (
+            <button
+              type="button"
+              onClick={() => setDialog({ type: 'create' })}
+              className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white"
+            >
+              새 보드
+            </button>
+          )}
+          <MoreMenu
+            label="데이터 메뉴"
+            items={[
+              { label: '가져오기', onClick: () => setDialog({ type: 'import' }) },
+              ...(boards.length > 0
+                ? [{ label: '전체 백업 저장', onClick: () => saveBackup(repository.getData()) }]
+                : []),
+            ]}
+          />
+        </div>
       </header>
 
+      <BackupNotice />
       {notice && (
         <div role="status" className="mb-4 flex items-center justify-between rounded-lg bg-amber-50 px-4 py-3 text-sm text-amber-900">
           <span>{notice}</span>
@@ -75,6 +91,13 @@ export default function BoardListPage() {
           >
             새 보드 만들기
           </button>
+          <button
+            type="button"
+            onClick={() => setDialog({ type: 'import' })}
+            className="rounded-lg border border-slate-300 px-5 py-3 font-medium"
+          >
+            가져오기
+          </button>
         </div>
       ) : (
         <ul className="flex flex-col gap-3">
@@ -95,6 +118,7 @@ export default function BoardListPage() {
                   items={[
                     { label: '이름 변경', onClick: () => setDialog({ type: 'rename', board }) },
                     { label: '복사', onClick: () => copy(board) },
+                    { label: 'JSON 내보내기', onClick: () => saveBoardFile(board) },
                     { label: '삭제', danger: true, onClick: () => setDialog({ type: 'delete', board }) },
                   ]}
                 />
@@ -104,6 +128,7 @@ export default function BoardListPage() {
         </ul>
       )}
 
+      {dialog?.type === 'import' && <ImportModal onClose={close} />}
       {dialog?.type === 'create' && (
         <BoardFormModal
           title="새 보드"

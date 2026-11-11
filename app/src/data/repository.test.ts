@@ -174,3 +174,67 @@ describe('전체 교체와 구독', () => {
     expect(repo.getData().boards).toEqual([])
   })
 })
+
+describe('importBoards', () => {
+  const sample = (id: string, name: string) => ({
+    id,
+    name,
+    createdAt: '2020-01-01T00:00:00.000Z',
+    updatedAt: '2020-01-01T00:00:00.000Z',
+    cards: [
+      {
+        id: `${id}-c1`,
+        title: '점심',
+        content: '',
+        date: '2026-01-03',
+        startTime: '12:00',
+        endTime: null,
+        placeName: null,
+        address: null,
+        isCompleted: true,
+        completedAt: '2026-01-03T03:00:00.000Z',
+        createdAt: '2020-01-01T00:00:00.000Z',
+        updatedAt: '2020-01-01T00:00:00.000Z',
+      },
+    ],
+  })
+
+  it('새 보드로 추가하고 ID를 새로 발급하며 기존 보드는 그대로 둔다', () => {
+    const { repo } = setup()
+    const mine = repo.createBoard('내 보드')
+    const [added] = repo.importBoards([sample('remote', '받은 보드')])
+    expect(repo.getData().boards).toHaveLength(2)
+    expect(added.id).not.toBe('remote')
+    expect(added.cards[0].id).not.toBe('remote-c1')
+    expect(repo.getBoard(mine.id)!.name).toBe('내 보드')
+  })
+
+  it('완료 상태와 카드 작성 시각(좌우 배치 기준)은 유지한다', () => {
+    const { repo } = setup()
+    const [added] = repo.importBoards([sample('remote', '받은 보드')])
+    expect(added.cards[0].isCompleted).toBe(true)
+    expect(added.cards[0].createdAt).toBe('2020-01-01T00:00:00.000Z')
+  })
+
+  it('같은 보드를 두 번 가져와도 ID가 겹치지 않는다', () => {
+    const { repo } = setup()
+    const b = sample('remote', '받은 보드')
+    repo.importBoards([b])
+    repo.importBoards([b])
+    const ids = repo.getData().boards.map((x) => x.id)
+    expect(new Set(ids).size).toBe(2)
+  })
+
+  it('여러 보드를 한 번에 추가한다', () => {
+    const { repo } = setup()
+    repo.importBoards([sample('a', 'A'), sample('b', 'B')])
+    expect(repo.getData().boards.map((b) => b.name)).toEqual(['A', 'B'])
+  })
+
+  it('저장에 실패하면 아무것도 추가되지 않는다', () => {
+    const { repo, storage } = setup()
+    storage.failWrites = 'quota'
+    expect(() => repo.importBoards([sample('a', 'A')])).toThrowError(StorageError)
+    expect(repo.getData().boards).toHaveLength(0)
+  })
+})

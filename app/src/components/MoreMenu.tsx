@@ -26,7 +26,7 @@ export default function MoreMenu({ label, items }: { label: string; items: MenuI
           <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} aria-hidden="true" />
           <ul
             role="menu"
-            className="absolute right-0 z-20 mt-1 w-36 overflow-hidden rounded-lg border border-slate-200 bg-white shadow-lg"
+            className="absolute right-0 z-20 mt-1 w-44 overflow-hidden rounded-lg border border-slate-200 bg-white shadow-lg"
           >
             {items.map((item) => (
               <li key={item.label} role="none">

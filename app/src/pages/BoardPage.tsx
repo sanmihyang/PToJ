@@ -1,8 +1,9 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { Link, Navigate, useParams, useSearchParams } from 'react-router-dom'
 import CardFormModal from '../components/CardFormModal'
 import FlowChart from '../components/FlowChart'
 import LocationModal from '../components/LocationModal'
+import ShareModal from '../components/ShareModal'
 import { isValidDate, repository, type Card } from '../data'
 import { useAppData } from '../hooks/useAppData'
 import { todayStr } from '../lib/date'
@@ -24,6 +25,7 @@ type Dialog =
   | { type: 'create' }
   | { type: 'edit'; card: Card }
   | { type: 'location'; cardId: string }
+  | { type: 'share' }
   | null
 
 const NAV_LABEL: Record<ViewMode, [string, string]> = {
@@ -42,6 +44,7 @@ export default function BoardPage() {
   const [params, setParams] = useSearchParams()
   const [dialog, setDialog] = useState<Dialog>(null)
   const [actionError, setActionError] = useState<string | null>(null)
+  const exportRef = useRef<HTMLDivElement>(null)
 
   const board = boards.find((b) => b.id === id)
   if (!board) {
@@ -88,6 +91,13 @@ export default function BoardPage() {
             ←
           </Link>
           <h1 className="min-w-0 flex-1 truncate font-bold">{board.name}</h1>
+          <button
+            type="button"
+            onClick={() => setDialog({ type: 'share' })}
+            className="min-h-10 rounded-lg px-3 text-sm font-medium text-emerald-700 hover:bg-emerald-50"
+          >
+            공유
+          </button>
         </div>
         <div className="mt-1 flex items-center justify-center gap-2">
           <button type="button" aria-label={prevLabel} onClick={() => go(shiftPeriod(date, view, -1))} className={navButton}>
@@ -142,7 +152,14 @@ export default function BoardPage() {
               {view === 'day' ? '이 날짜에 일정이 없습니다' : '이 기간에 일정이 없습니다'}
             </p>
           ) : (
-            <>
+            <div ref={exportRef} data-export-node>
+              {/* 이미지로 저장할 때만 보이는 제목. 문서에 텍스트를 중복해서 넣지 않도록 CSS로 그린다 */}
+              <div
+                className="export-only"
+                aria-hidden="true"
+                data-title={board.name}
+                data-sub={periodLabel(date, view)}
+              />
               {view !== 'day' && (
                 <p className="mt-3 text-center text-sm text-slate-500" data-testid="period-summary">
                   {groups.length}일 · 일정 {cardCount}개
@@ -170,7 +187,7 @@ export default function BoardPage() {
                   />
                 </section>
               ))}
-            </>
+            </div>
           )}
           <button
             type="button"
@@ -183,6 +200,14 @@ export default function BoardPage() {
         </>
       )}
 
+      {dialog?.type === 'share' && (
+        <ShareModal
+          board={board}
+          getExportNode={() => exportRef.current}
+          periodName={periodLabel(date, view)}
+          onClose={() => setDialog(null)}
+        />
+      )}
       {dialog?.type === 'location' && locationCard && (
         <LocationModal card={locationCard} onClose={() => setDialog(null)} />
       )}

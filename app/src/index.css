@@ -27,3 +27,42 @@ input[type='time'] {
 input[type='date']::-webkit-date-and-time-value {
   text-align: left;
 }
+
+/* 이미지로 저장할 때: 가로 스크롤로 잘린 부분까지 모두 담는다 */
+.export-only {
+  display: none;
+  padding: 1rem 1rem 0;
+}
+
+.export-only::before {
+  content: attr(data-title);
+  display: block;
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.export-only::after {
+  content: attr(data-sub);
+  display: block;
+  font-size: 0.875rem;
+  color: #64748b;
+}
+
+[data-exporting] {
+  width: max-content;
+  min-width: 100%;
+}
+
+[data-exporting] .export-only {
+  display: block;
+}
+
+[data-exporting] [data-testid='flow-scroll'] {
+  overflow: visible;
+}
+
+/* Safari 엔진은 이미지 캡처 때 그림자가 어긋나 보이므로, 캡처 중에는 그림자를 끈다 */
+[data-exporting] * {
+  box-shadow: none !important;
+}

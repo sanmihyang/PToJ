@@ -37,6 +37,7 @@ const FlowCard = forwardRef<HTMLDivElement, Props>(function FlowCard(
         </div>
         <button
           type="button"
+          data-export-ignore
           onClick={onEdit}
           aria-label={`${card.title} 수정`}
           className="-mr-1 -mt-1 flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-slate-500 hover:bg-slate-100"

@@ -42,11 +42,16 @@
   "share_payload": {
     "description": "공유 링크/JSON 내보내기 형식. 보드 1개를 담는다.",
     "format": { "app": "ptoj", "version": 1, "board": "Board" },
-    "link": "https://sanmihyang.github.io/PToJ/#/import?d=<base64url(deflate(JSON))>",
+    "link": "https://sanmihyang.github.io/PToJ/#/import?d=<base64url(deflate-raw(JSON))>",
+    "link_format": "링크용은 길이를 줄이기 위해 ID/수정 시각/빈 값을 뺀 압축 형식 {app, version, board:{name, cards:[{title, content?, date, startTime, endTime?, placeName?, address?, isCompleted?, completedAt?, createdAt}]}}. 가져올 때 빠진 값을 채워 검증한다. 카드 작성 순서(createdAt)는 좌우 배치 기준이라 유지한다",
+    "link_limit": "8,000자 초과 시 링크 공유 불가(JSON 파일 사용). 제목/메모/장소를 모두 채운 카드 기준 약 130개",
+    "file_name": "보드이름.ptoj.json",
     "import_rule": "새 보드로 추가하고 보드/카드 ID를 모두 새로 발급. 완료 상태는 그대로 유지(이미지처럼 스냅샷 전달)"
   },
   "backup_payload": {
     "format": { "app": "ptoj", "version": 1, "backup": true, "boards": "Board[]" },
-    "restore_modes": ["replace", "merge"]
+    "file_name": "ptoj-backup-YYYYMMDD.json",
+    "restore_modes": ["replace", "merge"],
+    "meta_key": "ptoj:meta — 마지막 백업 시각(lastBackupAt), 백업 안내를 닫은 시각(backupNoticeDismissedAt)"
   }
 }
