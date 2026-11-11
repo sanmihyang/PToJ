@@ -7,6 +7,8 @@ export const LIMITS = {
   cardTitle: 50,
   cardContent: 500,
   attendeeName: 20,
+  placeName: 200,
+  address: 300,
 } as const
 
 export type AttendeeStatus = 'yes' | 'no' | 'maybe'

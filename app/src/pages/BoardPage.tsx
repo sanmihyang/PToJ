@@ -2,12 +2,17 @@ import { useState } from 'react'
 import { Link, Navigate, useParams, useSearchParams } from 'react-router-dom'
 import CardFormModal from '../components/CardFormModal'
 import FlowChart from '../components/FlowChart'
+import LocationModal from '../components/LocationModal'
 import { isValidDate, repository, type Card } from '../data'
 import { useAppData } from '../hooks/useAppData'
 import { addDays, formatDay, todayStr } from '../lib/date'
 import { errorMessage } from '../lib/errors'
 
-type Dialog = { type: 'create' } | { type: 'edit'; card: Card } | null
+type Dialog =
+  | { type: 'create' }
+  | { type: 'edit'; card: Card }
+  | { type: 'location'; cardId: string }
+  | null
 
 export default function BoardPage() {
   const { id } = useParams()
@@ -26,6 +31,8 @@ export default function BoardPage() {
   const goTo = (next: string) => setParams({ d: next }, { replace: true })
 
   const dayCards = board.cards.filter((c) => c.date === date)
+  const locationCard =
+    dialog?.type === 'location' ? board.cards.find((c) => c.id === dialog.cardId) : undefined
   const openCreate = () => setDialog({ type: 'create' })
 
   function toggleComplete(card: Card) {
@@ -98,6 +105,7 @@ export default function BoardPage() {
             <FlowChart
               cards={dayCards}
               onEdit={(card) => setDialog({ type: 'edit', card })}
+              onOpenLocation={(card) => setDialog({ type: 'location', cardId: card.id })}
               onToggleComplete={toggleComplete}
             />
           )}
@@ -112,7 +120,10 @@ export default function BoardPage() {
         </>
       )}
 
-      {dialog && (
+      {dialog?.type === 'location' && locationCard && (
+        <LocationModal card={locationCard} onClose={() => setDialog(null)} />
+      )}
+      {(dialog?.type === 'create' || dialog?.type === 'edit') && (
         <CardFormModal
           key={dialog.type === 'edit' ? dialog.card.id : 'new'}
           boardId={board.id}

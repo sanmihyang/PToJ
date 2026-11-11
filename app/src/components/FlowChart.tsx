@@ -19,10 +19,11 @@ const PROGRESS_COLOR = '#059669'
 interface Props {
   cards: Card[]
   onEdit: (card: Card) => void
+  onOpenLocation: (card: Card) => void
   onToggleComplete: (card: Card) => void
 }
 
-export default function FlowChart({ cards, onEdit, onToggleComplete }: Props) {
+export default function FlowChart({ cards, onEdit, onOpenLocation, onToggleComplete }: Props) {
   const rows = useMemo(() => layoutCards(cards), [cards])
   const edges = useMemo(() => styleEdges(buildEdges(rows), cards), [rows, cards])
 
@@ -163,6 +164,7 @@ export default function FlowChart({ cards, onEdit, onToggleComplete }: Props) {
                       columns={row.columns}
                       offsetPx={idx === 0 ? Math.round(p.offset * MAX_OFFSET_PX) : 0}
                       onEdit={() => onEdit(p.card)}
+                      onOpenLocation={() => onOpenLocation(p.card)}
                       onToggleComplete={() => onToggleComplete(p.card)}
                     />
                   ))}

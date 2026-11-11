@@ -2,6 +2,7 @@ import { useState, type FormEvent } from 'react'
 import { LIMITS, NotFoundError, repository, type Card } from '../data'
 import { validateCardForm, type CardFormErrors, type CardFormValues } from '../lib/cardForm'
 import { errorMessage } from '../lib/errors'
+import { mapLinks, searchQuery } from '../lib/mapLinks'
 import ConfirmModal from './ConfirmModal'
 import Modal from './Modal'
 
@@ -38,6 +39,8 @@ export default function CardFormModal({ boardId, card, defaultDate, onSaved, onC
     startTime: card?.startTime ?? '',
     endTime: card?.endTime ?? '',
     content: card?.content ?? '',
+    placeName: card?.placeName ?? '',
+    address: card?.address ?? '',
   })
   const [errors, setErrors] = useState<CardFormErrors>({})
   const [saveError, setSaveError] = useState<string | null>(null)
@@ -68,17 +71,14 @@ export default function CardFormModal({ boardId, card, defaultDate, onSaved, onC
       date: values.date,
       startTime: values.startTime,
       endTime: values.endTime === '' ? null : values.endTime,
+      placeName: values.placeName.trim() === '' ? null : values.placeName.trim(),
+      address: values.address.trim() === '' ? null : values.address.trim(),
     }
     try {
       if (card) {
         repository.updateCard(boardId, card.id, fields)
       } else {
-        repository.addCard(boardId, {
-          ...fields,
-          placeName: null,
-          address: null,
-          attendanceEnabled: false,
-        })
+        repository.addCard(boardId, { ...fields, attendanceEnabled: false })
       }
       onSaved(values.date)
       onClose()
@@ -129,6 +129,36 @@ export default function CardFormModal({ boardId, card, defaultDate, onSaved, onC
             <p role="alert" className="-mt-2 text-sm text-red-600">
               {errors.endTime}
             </p>
+          )}
+          <Field label="위치 (선택)">
+            <input
+              value={values.placeName}
+              maxLength={LIMITS.placeName}
+              onChange={set('placeName')}
+              disabled={gone}
+              className={inputClass}
+              placeholder="장소명 (예: 제주공항)"
+            />
+          </Field>
+          <Field label="주소 (선택)">
+            <input
+              value={values.address}
+              maxLength={LIMITS.address}
+              onChange={set('address')}
+              disabled={gone}
+              className={inputClass}
+              placeholder="주소를 함께 적으면 더 정확하게 찾아요"
+            />
+          </Field>
+          {searchQuery(values) !== '' && (
+            <a
+              href={mapLinks(values)[0].url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="-mt-1 self-start rounded-lg border border-slate-300 px-3 py-2 text-sm font-medium hover:bg-slate-50"
+            >
+              지도에서 확인 ↗
+            </a>
           )}
           <Field label="내용 (선택)">
             <textarea

@@ -1,6 +1,7 @@
 import { forwardRef } from 'react'
 import type { Card } from '../data'
 import { timeLabel } from '../lib/format'
+import { hasPlace } from '../lib/mapLinks'
 
 interface Props {
   card: Card
@@ -9,11 +10,12 @@ interface Props {
   /** 줄 안에서 아래로 내릴 간격(px) */
   offsetPx: number
   onEdit: () => void
+  onOpenLocation: () => void
   onToggleComplete: () => void
 }
 
 const FlowCard = forwardRef<HTMLDivElement, Props>(function FlowCard(
-  { card, columns, offsetPx, onEdit, onToggleComplete },
+  { card, columns, offsetPx, onEdit, onOpenLocation, onToggleComplete },
   ref,
 ) {
   const width = columns > 1 ? 'w-40' : 'w-[min(15rem,calc(100vw-2rem))]'
@@ -44,6 +46,17 @@ const FlowCard = forwardRef<HTMLDivElement, Props>(function FlowCard(
       </div>
       {card.content && (
         <p className="mt-1 line-clamp-2 break-words text-sm text-slate-600">{card.content}</p>
+      )}
+      {hasPlace(card) && (
+        <button
+          type="button"
+          onClick={onOpenLocation}
+          aria-label={`${card.title} 위치 보기`}
+          className="-mx-1 mt-1 flex min-h-9 w-full items-center gap-1 rounded-lg px-1 text-left text-sm text-sky-700 hover:bg-black/5"
+        >
+          <span aria-hidden="true">📍</span>
+          <span className="min-w-0 truncate">{card.placeName ?? card.address}</span>
+        </button>
       )}
       <button
         type="button"

@@ -7,6 +7,8 @@ const ok: CardFormValues = {
   startTime: '12:00',
   endTime: '',
   content: '',
+  placeName: '',
+  address: '',
 }
 
 describe('validateCardForm', () => {

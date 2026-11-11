@@ -6,6 +6,8 @@ export interface CardFormValues {
   startTime: string
   endTime: string
   content: string
+  placeName: string
+  address: string
 }
 
 export type CardFormErrors = Partial<Record<keyof CardFormValues, string>>
