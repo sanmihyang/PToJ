@@ -107,7 +107,7 @@ export default function FlowChart({ cards, onEdit, onOpenLocation, onToggleCompl
   }, [measure, rows])
 
   return (
-    <div className="overflow-x-auto pb-28" data-testid="flow-scroll">
+    <div className="overflow-x-auto" data-testid="flow-scroll">
       <div ref={wrapRef} className="relative mx-auto w-max min-w-full px-4 py-4">
         <svg className="pointer-events-none absolute inset-0 h-full w-full" aria-hidden="true">
           <defs>
