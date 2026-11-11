@@ -38,7 +38,7 @@ test.describe('공유 창', () => {
   test('이미지/링크/파일/복사 항목이 보인다', async ({ page }) => {
     await openShare(page)
     const dialog = page.getByRole('dialog', { name: '공유' })
-    await expect(dialog.getByRole('button', { name: '이미지 저장' })).toBeEnabled()
+    await expect(dialog.getByRole('button', { name: '이미지 파일로 저장' })).toBeEnabled()
     await expect(dialog.getByRole('button', { name: '링크 복사' })).toBeVisible()
     await expect(dialog.getByRole('button', { name: 'JSON 파일 저장' })).toBeVisible()
     await expect(dialog.getByRole('button', { name: '보드 복사' })).toBeVisible()
@@ -408,7 +408,7 @@ test.describe('이미지 저장', () => {
     await seedBoards(page, [trip])
     await openBoard(page)
     await openShare(page)
-    const button = page.getByRole('dialog', { name: '공유' }).getByRole('button', { name: '이미지 저장' })
+    const button = page.getByRole('dialog', { name: '공유' }).getByRole('button', { name: '이미지 파일로 저장' })
     await expect(button).toBeEnabled({ timeout: 15000 })
     const [download] = await Promise.all([page.waitForEvent('download'), button.click()])
     expect(download.suggestedFilename().normalize('NFC')).toBe('제주 여행 2026.01.03.png')
@@ -432,7 +432,7 @@ test.describe('이미지 저장', () => {
     // 4열(160px × 4 + 간격)은 모바일 화면보다 넓다
     const visibleWidth = await page.locator('[data-export-node]').evaluate((el) => el.clientWidth)
     await openShare(page)
-    const button = page.getByRole('dialog', { name: '공유' }).getByRole('button', { name: '이미지 저장' })
+    const button = page.getByRole('dialog', { name: '공유' }).getByRole('button', { name: '이미지 파일로 저장' })
     await expect(button).toBeEnabled({ timeout: 15000 })
     const [download] = await Promise.all([page.waitForEvent('download'), button.click()])
     const { width } = pngSize(readFileSync((await download.path())!))
@@ -446,6 +446,115 @@ test.describe('이미지 저장', () => {
     await page.goto(`./#/board/trip?d=2030-05-05`)
     await openShare(page)
     await expect(page.getByRole('dialog', { name: '공유' }).getByText('저장할 일정이 없습니다')).toBeVisible()
-    await expect(page.getByRole('dialog', { name: '공유' }).getByRole('button', { name: '이미지 저장' })).toHaveCount(0)
+    await expect(page.getByRole('dialog', { name: '공유' }).getByRole('button', { name: '이미지 파일로 저장' })).toHaveCount(0)
+  })
+})
+
+test.describe('사진첩 저장 (기기 공유 화면)', () => {
+  type Mode = 'ok' | 'cancel' | 'fail' | 'none'
+
+  /** 기기 공유 화면(navigator.share)을 흉내 낸다. 'none'은 지원하지 않는 환경 */
+  async function mockShare(page: Page, mode: Mode) {
+    await page.addInitScript((m) => {
+      const define = (name: string, value: unknown) =>
+        Object.defineProperty(navigator, name, { value, configurable: true, writable: true })
+      if (m === 'none') {
+        define('canShare', undefined)
+        define('share', undefined)
+        return
+      }
+      define('canShare', () => true)
+      define('share', async (data: ShareData) => {
+        ;(window as unknown as { __shared: unknown }).__shared = (data.files ?? []).map((f) => ({
+          name: f.name,
+          type: f.type,
+          size: f.size,
+        }))
+        if (m === 'cancel') throw new DOMException('cancelled', 'AbortError')
+        if (m === 'fail') throw new Error('boom')
+      })
+    }, mode)
+  }
+
+  const openImageShare = async (page: Page) => {
+    await seedBoards(page, [trip])
+    await openBoard(page)
+    await openShare(page)
+    await expect(page.getByRole('dialog', { name: '공유' }).getByRole('button', { name: '이미지 파일로 저장' })).toBeEnabled({ timeout: 15000 })
+  }
+  const shared = (page: Page) =>
+    page.evaluate(() => (window as unknown as { __shared?: { name: string; type: string; size: number }[] }).__shared)
+
+  test('모바일: "사진에 저장하기"가 기본 버튼이고 누르면 이미지 파일로 공유 화면이 열린다', async ({ page, isMobile }) => {
+    test.skip(!isMobile, '모바일 전용')
+    await mockShare(page, 'ok')
+    await openImageShare(page)
+    const dialog = page.getByRole('dialog', { name: '공유' })
+    await expect(dialog.getByText(/"이미지 저장"을 누르면 사진첩에 저장돼요/)).toBeVisible()
+    await expect(dialog.locator('img')).toHaveCount(0) // 공유 화면을 쓸 수 있으면 미리보기는 필요 없다
+    await dialog.getByRole('button', { name: '사진에 저장하기' }).click()
+    await expect(dialog.getByText('공유했어요')).toBeVisible()
+    const files = (await shared(page))!
+    expect(files).toHaveLength(1)
+    expect(files[0].type).toBe('image/png')
+    expect(files[0].name).toBe('제주 여행 2026.01.03.png')
+    expect(files[0].size).toBeGreaterThan(1000)
+  })
+
+  test('모바일: 공유 화면에서 취소하면 오류 없이 그대로 둔다', async ({ page, isMobile }) => {
+    test.skip(!isMobile, '모바일 전용')
+    await mockShare(page, 'cancel')
+    await openImageShare(page)
+    const dialog = page.getByRole('dialog', { name: '공유' })
+    await dialog.getByRole('button', { name: '사진에 저장하기' }).click()
+    await expect.poll(() => shared(page)).toBeTruthy() // 공유 화면은 열렸다
+    await expect(dialog.getByRole('alert')).toHaveCount(0)
+    await expect(dialog.getByText('공유했어요')).toHaveCount(0)
+  })
+
+  test('모바일: 공유 화면이 실패하면 안내한다', async ({ page, isMobile }) => {
+    test.skip(!isMobile, '모바일 전용')
+    await mockShare(page, 'fail')
+    await openImageShare(page)
+    const dialog = page.getByRole('dialog', { name: '공유' })
+    await dialog.getByRole('button', { name: '사진에 저장하기' }).click()
+    await expect(dialog.getByRole('alert')).toBeVisible()
+  })
+
+  test('모바일: 파일 저장도 그대로 쓸 수 있다', async ({ page, isMobile }) => {
+    test.skip(!isMobile, '모바일 전용')
+    await mockShare(page, 'ok')
+    await openImageShare(page)
+    const [download] = await Promise.all([
+      page.waitForEvent('download'),
+      page.getByRole('dialog', { name: '공유' }).getByRole('button', { name: '이미지 파일로 저장' }).click(),
+    ])
+    expect(download.suggestedFilename().normalize('NFC')).toBe('제주 여행 2026.01.03.png')
+  })
+
+  test('모바일에서 공유 화면을 쓸 수 없으면 이미지를 보여 주고 길게 눌러 저장하도록 안내한다', async ({ page, isMobile }) => {
+    test.skip(!isMobile, '모바일 전용')
+    await mockShare(page, 'none')
+    await openImageShare(page)
+    const dialog = page.getByRole('dialog', { name: '공유' })
+    await expect(dialog.getByRole('button', { name: '사진에 저장하기' })).toHaveCount(0)
+    const img = dialog.getByRole('img', { name: /제주 여행 .* 로드맵/ })
+    await expect(img).toBeVisible()
+    await expect(img).toHaveAttribute('src', /^data:image\/png;base64,/)
+    await expect(dialog.getByText(/길게 눌러 "사진에 추가"/)).toBeVisible()
+    // 미리보기가 화면을 넘치지 않는다
+    const box = (await img.boundingBox())!
+    expect(box.x + box.width).toBeLessThanOrEqual(page.viewportSize()!.width)
+    expect(await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth)).toBe(false)
+  })
+
+  test('데스크톱: "사진에 저장하기"와 미리보기는 나오지 않는다', async ({ page, isMobile }) => {
+    test.skip(isMobile, '데스크톱 전용')
+    await mockShare(page, 'ok')
+    await openImageShare(page)
+    const dialog = page.getByRole('dialog', { name: '공유' })
+    await expect(dialog.getByRole('button', { name: '사진에 저장하기' })).toHaveCount(0)
+    await expect(dialog.getByRole('button', { name: '이미지 공유하기' })).toBeVisible() // 공유 화면을 지원하면 일반 공유 버튼
+    await expect(dialog.locator('img')).toHaveCount(0)
   })
 })

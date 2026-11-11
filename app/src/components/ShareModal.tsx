@@ -12,6 +12,7 @@ import {
   shareViaSheet,
 } from '../lib/files'
 import { errorMessage } from '../lib/errors'
+import { isMobileDevice } from '../lib/device'
 import { buildShareLink, type ShareLink } from '../lib/shareLink'
 import Modal from './Modal'
 
@@ -26,13 +27,22 @@ interface Props {
 
 type ImageState =
   | { status: 'preparing' }
-  | { status: 'ready'; blob: Blob; file: File }
+  | { status: 'ready'; blob: Blob; file: File; previewUrl: string | null }
   | { status: 'error'; message: string }
 
 type LinkState =
   | { status: 'loading' }
   | { status: 'ready'; link: ShareLink }
   | { status: 'error'; message: string }
+
+function blobToDataUrl(blob: Blob): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => resolve(String(reader.result))
+    reader.onerror = () => reject(reader.error)
+    reader.readAsDataURL(blob)
+  })
+}
 
 const button = 'min-h-11 rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium hover:bg-slate-50 disabled:opacity-50'
 
@@ -59,9 +69,12 @@ export default function ShareModal({ board, getExportNode, periodName, onClose }
       return
     }
     exportNodeToPng(node)
-      .then((blob) => {
+      .then(async (blob) => {
+        const file = new File([blob], imageName, { type: 'image/png' })
+        // 모바일인데 공유 화면을 쓸 수 없으면, 길게 눌러 저장할 수 있게 이미지를 화면에 보여 준다
+        const previewUrl = isMobileDevice() && !canShareFiles([file]) ? await blobToDataUrl(blob) : null
         if (cancelled) return
-        setImage({ status: 'ready', blob, file: new File([blob], imageName, { type: 'image/png' }) })
+        setImage({ status: 'ready', blob, file, previewUrl })
       })
       .catch((e) => {
         if (cancelled) return
@@ -116,23 +129,47 @@ export default function ShareModal({ board, getExportNode, periodName, onClose }
       <div className="flex flex-col gap-5">
         <section aria-label="이미지">
           <h3 className="mb-1 text-sm font-semibold">이미지로 저장</h3>
-          <p className="mb-2 text-xs text-slate-500">지금 보고 있는 기간({periodName})을 그림 파일로 저장해요.</p>
-          {image.status === 'error' ? (
+          <p className="mb-2 text-xs text-slate-500">지금 보고 있는 기간({periodName})을 그림으로 저장해요.</p>
+          {image.status === 'error' && (
             <p role="alert" className="text-sm text-red-600">{image.message}</p>
-          ) : (
-            <div className="flex flex-wrap gap-2">
-              <button
-                type="button"
-                disabled={image.status !== 'ready'}
-                onClick={() => image.status === 'ready' && downloadBlob(image.blob, imageName)}
-                className={button}
-              >
-                {image.status === 'ready' ? '이미지 저장' : '이미지 준비 중…'}
-              </button>
-              {image.status === 'ready' && canShareFiles([image.file]) && (
-                <button type="button" onClick={() => void shareFiles(image.file, board.name)} className={button}>
-                  이미지 공유하기
+          )}
+          {image.status === 'preparing' && <p className="text-sm text-slate-500">이미지 준비 중…</p>}
+          {image.status === 'ready' && (
+            <div className="flex flex-col gap-2">
+              <div className="flex flex-wrap gap-2">
+                {canShareFiles([image.file]) && (
+                  <button
+                    type="button"
+                    onClick={() => void shareFiles(image.file, board.name)}
+                    className={
+                      isMobileDevice()
+                        ? 'min-h-11 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white'
+                        : button
+                    }
+                  >
+                    {isMobileDevice() ? '사진에 저장하기' : '이미지 공유하기'}
+                  </button>
+                )}
+                <button type="button" onClick={() => downloadBlob(image.blob, imageName)} className={button}>
+                  이미지 파일로 저장
                 </button>
+              </div>
+              {isMobileDevice() && canShareFiles([image.file]) && (
+                <p className="text-xs text-slate-500">
+                  열리는 화면에서 &quot;이미지 저장&quot;을 누르면 사진첩에 저장돼요. 카톡 등으로 바로 보낼 수도 있어요.
+                </p>
+              )}
+              {image.previewUrl && (
+                <div>
+                  <p className="mb-1 text-xs text-slate-500">
+                    아래 이미지를 길게 눌러 &quot;사진에 추가&quot;(iPhone) 또는 &quot;이미지 다운로드&quot;(Android)를 선택하면 사진첩에 저장돼요.
+                  </p>
+                  <img
+                    src={image.previewUrl}
+                    alt={`${board.name} ${periodName} 로드맵`}
+                    className="max-h-80 w-full rounded-lg border border-slate-200 object-contain"
+                  />
+                </div>
               )}
             </div>
           )}
